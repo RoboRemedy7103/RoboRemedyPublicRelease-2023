@@ -1,0 +1,61 @@
+plugins {
+    id "cpp"
+    id "edu.wpi.first.GradleRIO" version "2023.4.3"
+}
+
+// Disable local cache, as it won't have the cross artifact necessary
+wpi.maven.useLocal = false
+
+// Set to true to run simulation in debug mode
+wpi.cpp.debugSimulation = false
+
+def appName = "NtLidar"
+
+nativeUtils.withCrossLinuxArm64()
+//nativeUtils.withCrossLinuxArm32() // Uncomment to build for arm32. targetPlatform below also needs to be fixed
+
+model {
+    repositories {
+        libs(PrebuiltLibraries) {
+           lidar {
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibrayFile = file(projectDir.absolutePath + "/lib/libHPS3DSDK.so")
+                    sharedLibrayLinkFile = file(projectDir.absolutePath + "/lib/libHPS3DSDK.so")
+                }
+           }
+        }
+    }
+
+    components {
+        "${appName}"(NativeExecutableSpec) {
+            //targetPlatform wpi.platforms.desktop // Uncomment to build on whatever the native platform currently is
+            targetPlatform wpi.platforms.linuxarm64
+            //targetPlatform wpi.platforms.linuxarm32 // Uncomment to build for arm32
+
+            sources.cpp {
+                source {
+                    srcDir 'src/main/cpp'
+                    include '**/*.cpp', '**/*.cc'
+                }
+                exportedHeaders {
+                    srcDir 'src/main/include'
+                }
+            }
+
+            // Enable run tasks for this component
+            wpi.cpp.enableExternalTasks(it)
+
+            wpi.cpp.deps.wpilibStatic(it)
+        }
+    }
+}
+
+tasks.withType(LinkExecutable).configureEach {
+  linkerArgs.add '-L' + file(projectDir.absolutePath + "/lib/")
+  linkerArgs.add '-lHPS3DSDK'
+  linkerArgs.add '-Wl,-rpath=' + file(projectDir.absolutePath + "/lib/")
+}
+
+wrapper {
+    gradleVersion = '8.4'
+}

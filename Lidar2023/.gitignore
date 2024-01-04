@@ -1,0 +1,10 @@
+### macOS ###
+# General
+._.DS_Store
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swo
+# Gradle
+.gradle
+build
